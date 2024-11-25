@@ -1,0 +1,25 @@
+{
+  "[jsonc]": {
+    "editor.tabSize": 2,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "black-formatter.args": ["--line-length", "200"],
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "off",
+  "editor.formatOnSave": true,
+  "files.exclude": {
+    "**/{__pycache__}": true,
+    "**/*.spec": true,
+    "frontend/**/auto-*.d.ts": true,
+    "**/build": true,
+    "{.conda,gui,.gitignore}": true,
+    "frontend/node_modules": true,
+    "frontend/tsconfig.*": true
+    // "frontend/{public,*.*}": true,
+  }
+}

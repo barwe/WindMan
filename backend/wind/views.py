@@ -1,7 +1,7 @@
 from zex import xlist
+from typing import Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
-from screeninfo import get_monitors
 from fastcore import GoodResponse, BadResponse
 from wind.exwind.wind import ExWindow
 from wind.exwind.apps import APPS
@@ -34,6 +34,7 @@ def list_windows():
 class ActivateData(BaseModel):
     winId: str
     monitorName: str
+    options: Optional[dict]
 
 
 @router.post("/windows/activate/")
@@ -50,7 +51,7 @@ def activate_window(data: ActivateData):
     # 2. 屏幕发生变化时（此时 wind.monitor.name != monitor.name）
     # 3. 已经最小化时（此时 wind.is_minimized is True）
     if wind.monitor is None or wind.monitor.name != monitor.name or wind.is_minimized:
-        wind.ex_maximize_on_monitor(monitor)
+        wind.ex_maximize_on_monitor(monitor, fix_height=data.options["fixHeight"])
     else:
         wind.ex_minimize()
 

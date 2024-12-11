@@ -42,9 +42,11 @@ class ExWindow(Window):
         self.is_maximized = True
         subprocess.call(["xdotool", "windowactivate", self.id])
 
-    def ex_maximize_on_monitor(self, monitor: "Monitor"):
-        self.ex_move_to_monitor(monitor)
+    def ex_maximize_on_monitor(self, monitor: "Monitor", fix_height=0):
+        """将窗口最大化到指定的屏幕上"""
         self.ex_maximize()
+        self.unmaximize()
+        self.resize_and_move(monitor.x, monitor.y, monitor.width, monitor.height + fix_height)
 
     def ex_minimize(self):
         """将窗口最小化"""

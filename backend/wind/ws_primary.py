@@ -1,13 +1,9 @@
-from typing import Any
-from pydantic import BaseModel
+import time
+import asyncio
+from loguru import logger
 from fastapi import WebSocket, WebSocketDisconnect
-from screeninfo import get_monitors
 from .exwind.wind import ExWindow
-
-
-class ReceviedData(BaseModel):
-    event: str
-    data: Any = None
+from .exwind.apps import APPS
 
 
 class EventHandler:
@@ -19,22 +15,17 @@ class EventHandler:
         await self.websocket.send_json(sended)
 
     async def run_loop(self):
+        start = time.time()
         while True:
-            rawdata = await self.websocket.receive_json()
-            received = ReceviedData(**rawdata)
-            if hasattr(self, received.event):
-                handle_func = getattr(self, received.event)
-                result = handle_func(received.data)
-                await self.send_json(received.event, result)
-
-    def LIST_MONITORS(self, _):
-        return [m.__dict__ for m in get_monitors()]
-
-    def CHANGE_SELECTED_WM_CLASSES(self, data: dict):
-        wm_classes = data["wm_classes"]
-        winds = ExWindow.get_windows(wm_classes)
-        wind_ds = [w.json() for w in winds]
-        return wind_ds
+            end = time.time()
+            if end - start > 3600:
+                logger.info("服务端主动断开连接")
+                self.websocket.close()
+                break
+            winds = ExWindow.get_windows(APPS.keys())
+            wind_ds = [w.json() for w in winds]
+            await self.websocket.send_json(wind_ds)
+            await asyncio.sleep(2)
 
 
 async def primary_websocket(websocket: WebSocket):
@@ -43,4 +34,5 @@ async def primary_websocket(websocket: WebSocket):
     try:
         await event_handler.run_loop()
     except WebSocketDisconnect:
-        print("WebSocket connection closed.")
+        print("客户端主动断开连接")
+        websocket.close()

@@ -13,8 +13,8 @@ export default {
     const r = await axios.get('/apps/')
     return r.data as ResponseData<LVRecord<string>[]>
   },
-  activateWindow: async (winId: string, monitorName: string) => {
-    const data = { winId, monitorName }
+  activateWindow: async (winId: string, monitorName: string, options?: { fixHeight?: number }) => {
+    const data = { winId, monitorName, options }
     const r = await axios.post('/windows/activate/', data)
     return r.data as ResponseData<AppWindow>
   },

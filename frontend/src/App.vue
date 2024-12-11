@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { dataApi } from '@/api';
+import { useWebSocket } from '@vueuse/core';
+import { getWebSocketUrl } from './composables/ws';
 
 const site = useSiteStore()
 const store = useDataStore()
@@ -13,7 +15,7 @@ dataApi.listMonitors().then(rd => {
     }
   }
 })
-dataApi.listWindows().then(rd => { if (rd.ok) { store.windows = rd.data } })
+// dataApi.listWindows().then(rd => { if (rd.ok) { store.windows = rd.data } })
 dataApi.listApps().then(rd => { if (rd.ok) { appOptions.value = rd.data } })
 
 const containerStyle = computed(() => ({
@@ -22,14 +24,23 @@ const containerStyle = computed(() => ({
 }))
 
 const activateWindow = async (win: AppWindow) => {
-  const rd = await dataApi.activateWindow(win.id, store.selectedMonitorName!)
+  const moName = store.selectedMonitorName!
+  const rd = await dataApi.activateWindow(win.id, moName, { fixHeight: store.fixedHeights[moName] })
   if (rd.ok) { assign(win, rd.data) }
 }
 
 const getBetterRightText = (win: AppWindow) => {
   const suf = win.is_maximized ? " (已最大化)" : win.is_minimized ? " (已最小化)" : ""
-  return `${win.data.right_text}${suf}`
+  return `${win.data.right_text ?? ''}${suf}`
 }
+
+useWebSocket(getWebSocketUrl("/"), {
+  onMessage: (_, event) => {
+    store.windows = JSON.parse(event.data)
+  }
+})
+
+const show = ref(false)
 </script>
 
 <template>
@@ -47,9 +58,10 @@ const getBetterRightText = (win: AppWindow) => {
       </div>
       <!-- app tags -->
       <div class="mt-2 fx-b sx-1">
+        <n-button type="info" @click="show = true">设置</n-button>
         <template v-for="d in appOptions">
           <n-tag :type="d.value === store.selectedApp ? 'info' : 'default'"
-            class="h-40px flex-1 fx-c cursor-pointer select-none" @click="() => store.selectedApp = d.value">
+            class="h-34px flex-1 fx-c cursor-pointer select-none" @click="() => store.selectedApp = d.value">
             {{ d.label }}
           </n-tag>
         </template>
@@ -64,6 +76,17 @@ const getBetterRightText = (win: AppWindow) => {
         </template>
       </div>
     </div>
+    <n-modal v-model:show="show">
+      <n-card class="mx-5">
+        <div class="mb-2">窗口高度校正（窗口高度 = 屏幕高度 - 校正值）</div>
+        <div v-for="mo in store.monitors">
+          <div class="fx-l mb-2">
+            <div class="w-20">{{ mo.name }}</div>
+            <n-input-number v-model:value="store.fixedHeights[mo.name]" placeholder="" />
+          </div>
+        </div>
+      </n-card>
+    </n-modal>
   </n-config-provider>
 </template>
 

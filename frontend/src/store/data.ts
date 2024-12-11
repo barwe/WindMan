@@ -47,7 +47,20 @@ const useMonitors = () => {
     height: px(canvas.value.h),
   }))
   const selectedMonitorName = ref<string>()
-  return { canvas, canvasStyle, monitors, viewedMonitors, selectedMonitorName }
+
+  const fixedHeights = ref<SNRecord>(JSON.parse(localStorage.getItem('fixed-heights') ?? '{}'))
+  watch(fixedHeights, data => localStorage.setItem('fixed-heights', JSON.stringify(data)), { deep: true })
+
+  watch(monitors, ds => {
+    const data = { ...fixedHeights.value }
+    ds.forEach(d => {
+      if (!has(data, d.name)) data[d.name] = 0
+    })
+    fixedHeights.value = data
+    console.log(data)
+  })
+
+  return { canvas, canvasStyle, monitors, viewedMonitors, selectedMonitorName, fixedHeights }
 }
 
 const useApps = () => {
